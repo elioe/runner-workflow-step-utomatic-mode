@@ -1,0 +1,50 @@
+services:
+
+    runner:
+      deploy:
+        replicas: 1
+      build:
+        context: runner
+        args:
+          RUNNER_IMAGE: ${RUNNER_IMAGE}
+      platform: ${RUNNER_PLATFORM}
+      environment:
+        RUNNER_RUNDECK_SERVER_TOKEN: ${RUNNER_RUNDECK_SERVER_TOKEN}
+        RUNNER_RUNDECK_SERVER_URL: ${RUNNER_RUNDECK_SERVER_URL}
+        RUNNER_RUNDECK_CLIENT_ID: ${RUNNER_RUNDECK_CLIENT_ID}
+        RUNNER_CLOUD_ENABLED: "false"
+        RUNNER_RUNDECK_ENABLED: "true"
+        RUNNER_RUNDECK_HMAC_REQUIRE: "false"
+        RUNNER_LOG_OUTPUT: "console"
+      restart: on-failure
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+      volumes:
+        - ./data/keys:/home/runner/keys/
+        - /var/run/docker.sock:/var/run/docker.sock
+      networks:
+        - runner-a
+        - default
+      ports:
+        - "9801-9803:8080"
+
+
+    node-runner:
+      deploy:
+        replicas: 10
+      image: rundeck/node-demo
+      ports:
+        - "22"
+      environment:
+        - SSHD_PORT=22
+        - KEY_PATH=/app/data
+      volumes:
+        - ./data/keys:/configuration/
+      networks:
+        - runner-a
+
+
+networks:
+  runner-a:
+    driver: bridge
+

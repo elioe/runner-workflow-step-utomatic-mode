@@ -1,0 +1,95 @@
+services:
+  runner-a:
+    build:
+      context: runner
+      args:
+        IMAGE: ${RUNNER_IMAGE}
+    deploy:
+      replicas: 1
+    platform: linux/amd64
+    environment:
+      RUNNER_RUNDECK_SERVER_TOKEN: ${RUNNER_A_TOKEN}
+      RUNNER_RUNDECK_SERVER_URL: ${RUNDECK_URL}
+      RUNNER_RUNDECK_CLIENT_ID: ${RUNNER_A_ID}
+      RUNNER_LOG_OUTPUT: "console"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${PWD}/ansible:/home/runner/ansible:rw
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PWD}/keys:/home/runner/keys:rw
+    networks:
+      - runner-a
+
+  runner-b:
+    build:
+      context: runner
+      args:
+        IMAGE: ${RUNNER_IMAGE}
+    deploy:
+      replicas: 1
+    platform: linux/amd64
+    environment:
+      RUNNER_RUNDECK_SERVER_TOKEN: ${RUNNER_B_TOKEN}
+      RUNNER_RUNDECK_SERVER_URL: ${RUNDECK_URL}
+      RUNNER_RUNDECK_CLIENT_ID: ${RUNNER_B_ID}
+      RUNNER_LOG_OUTPUT: "console"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${PWD}/ansible:/home/runner/ansible:rw
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${PWD}/keys:/home/runner/keys:rw
+    networks:
+      - runner-b
+
+  ssh-node-a:
+    platform: linux/amd64
+    deploy:
+      replicas: 5
+    build:
+      context: node
+    environment:
+      NODE_USER_PASSWORD: testpassword123
+    ports:
+      - "22"
+    volumes:
+      - ${PWD}/keys:/configuration:rw
+    networks:
+      - runner-a
+
+  ssh-node-b:
+    platform: linux/amd64
+    deploy:
+      replicas: 5
+    build:
+      context: node
+    environment:
+      NODE_USER_PASSWORD: testpassword123
+    ports:
+      - "22"
+    volumes:
+      - ${PWD}/keys:/configuration:rw
+    networks:
+      - runner-b
+
+  ssh-node-local:
+    platform: linux/amd64
+    deploy:
+      replicas: 1
+    build:
+      context: node
+    environment:
+      NODE_USER_PASSWORD: testpassword123
+    ports:
+      - "22"
+    volumes:
+      - ${PWD}/keys:/configuration:rw
+    networks:
+      - default
+
+networks:
+  runner-a:
+    driver: bridge
+  runner-b:
+    driver: bridge

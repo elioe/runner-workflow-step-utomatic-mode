@@ -1,0 +1,17 @@
+---
+- hosts: all
+  become: false
+  vars:
+    ansible_user: "{{ host_users[inventory_hostname] }}"
+    ansible_password: "{{ host_passwords[inventory_hostname] }}"
+  tasks:
+    - name: Get Disk Space
+      shell: "df -h && date && env"
+      register: df
+    - debug: var=df.stdout_lines
+    - name: Check Process
+      shell: "ps -a"
+      register: pid
+    - debug: var=pid.stdout_lines
+
+

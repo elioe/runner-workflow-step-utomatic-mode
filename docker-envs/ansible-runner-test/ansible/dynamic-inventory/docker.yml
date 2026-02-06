@@ -1,0 +1,32 @@
+plugin: community.docker.docker_containers
+docker_host: unix://var/run/docker.sock # Or tcp://<docker_host_ip>:2375 for remote Docker
+# Optional: Filter containers based on labels or names
+# filters:
+#   label:
+#     com.docker.compose.project: my_project
+#   name:
+#     - my_service_1
+#     - my_service_2
+strict: false
+connection_type: ssh
+keyed_groups:
+  # Add containers with primary network foo to a network_foo group
+  - prefix: network
+    key: 'docker_hostconfig.NetworkMode'
+  # Add Linux hosts to an os_linux group
+  - prefix: os
+    key: docker_platform
+compose:
+  docker_user: agent
+  ansible_ssh_host: 'docker_name[1:]'
+  ansible_ssh_port: 22
+  ansible-ssh-password-storage-path: 'keys/project/Ansible-Runner/node.password'
+filters:
+  # Accept all containers which have a label called 'foo'
+  - include: >-
+      "foo" in docker_config.Labels
+  # Next accept all containers whose inventory_hostname starts with 'a'
+  - include: >-
+      inventory_hostname.startswith("docker-runner-ansible-ssh-node")
+  # Exclude all containers that did not match any of the above filters
+  - exclude: true
